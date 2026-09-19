@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Custom Styling for Sleek Modern Look
+# Custom Styling
 st.markdown(
     """
     <style>
@@ -57,6 +57,18 @@ with st.sidebar:
         ["Physics", "Chemistry", "Biology", "Mathematics", "General JEE/NEET Guidance"],
     )
 
+    # Material Style Selector (No PDF needed)
+    material_style = st.selectbox(
+        "📚 Target Material Style:",
+        [
+            "MTG Objective NCERT at your Fingertips",
+            "Arihant (DC Pandey / Pradeep style)",
+            "Vedantu Tatva / Allen Coaching Modules",
+            "Pure NCERT Line-by-Line Strict",
+        ],
+        help="Simulates questions and depth based on top coaching materials",
+    )
+
     mode = st.radio(
         "Teaching Mode:",
         [
@@ -84,35 +96,40 @@ with st.sidebar:
 
 # ----------------- PROMPT INSTRUCTION -----------------
 SYSTEM_INSTRUCTION = f"""
-You are 'Guru', a top-tier mentor and best-friend style AI tutor for Indian students preparing for JEE and NEET.
-Current Subject Focus: {subject}
+You are 'Guru', an elite mentor and best-friend style AI tutor for Indian students preparing for JEE and NEET.
+Subject: {subject}
 Active Learning Mode: {mode}
+Target Material Emulation: {material_style}
+
+Style Enforcement based on Material:
+1. If 'MTG Objective NCERT at your Fingertips':
+   - Focus heavily on direct factual NCERT lines, tricky wordings, and typical NCERT-extract MCQs.
+2. If 'Arihant (DC Pandey / Pradeep style)':
+   - Focus on systematic derivations, standard numerical methods, and multi-concept problem breakdowns.
+3. If 'Vedantu Tatva / Allen Coaching Modules':
+   - Use high-level coaching tricks, elimination techniques, and Level-1 / Level-2 difficulty questions.
+4. If 'Pure NCERT Line-by-Line Strict':
+   - Strictly frame questions around exact NCERT facts, tables, diagrams, and Assertion-Reason pairs.
 
 Tone & Language:
-- Friendly, encouraging, smart Tanglish (Tamil + English blend).
-- Speak like a friendly study buddy or elder brother (using terms like 'bro', 'thala', 'kavanama paaru').
+- Friendly, warm, smart Tanglish (Tamil + English blend). Like a sharp elder brother or coaching study partner.
+- Use words like 'bro', 'thala', 'kavanama paaru', 'easy trick solren'.
 
 Rules based on Mode:
-1. If mode is 'Full Concept Flow':
-   - Concept Name
-   - Relatable Intuition / Real-life Analogy
-   - Key Formulae / Core Points
-   - 1 Standard PYQ MCQ with 4 options (A, B, C, D)
-2. If mode is 'Rapid PYQ Drill':
-   - Directly present 1 tricky PYQ with options and ask the user to choose an answer before revealing the solution.
-3. If mode is 'Formula / Concept Cheat Sheet':
-   - Deliver high-yield formulas, short notes, and common traps/mistakes in a clean format.
+- 'Full Concept Flow': Concept Name → Relatable Intuition/Analogy → Key Formulae/Core Points → 1 MCQ with 4 options strictly matched to the selected material style.
+- 'Rapid PYQ Drill': Present 1 standard previous-year MCQ directly and ask the student to solve it before giving away the answer.
+- 'Formula / Concept Cheat Sheet': Tabular or bulleted high-yield points, common traps, and shortcuts.
 
-Vision / Image Doubt Handling:
-- If an image is provided, identify the specific question/diagram in it, solve it step-by-step in Tanglish, and highlight the core trick.
-
-CRITICAL RULE (Puriyala handling):
-- If the student says 'puriyala', 'doubt', or seems stuck, NEVER repeat the old explanation. Switch entirely to a simpler, visual, mechanical, or daily-life example.
+Puriyala Rule:
+- If the student says 'puriyala', 'doubt', or seems stuck, NEVER repeat the old analogy. Switch completely to an intuitive mechanical or daily-life example.
 """
 
 # ----------------- CHAT INTERFACE -----------------
 st.markdown('<div class="main-title">⚡ Guru: JEE / NEET AI Buddy</div>', unsafe_allow_html=True)
-st.markdown(f'<div class="sub-caption">Current Subject: <b>{subject}</b> | Mode: <b>{mode}</b></div>', unsafe_allow_html=True)
+st.markdown(
+    f'<div class="sub-caption">Subject: <b>{subject}</b> | Material: <b>{material_style}</b> | Mode: <b>{mode}</b></div>',
+    unsafe_allow_html=True,
+)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -123,18 +140,16 @@ for msg in st.session_state.messages:
         st.markdown(msg["content"])
 
 # User Input
-if prompt := st.chat_input("Doubt enna bro? Type here or upload photo from sidebar..."):
+if prompt := st.chat_input("Doubt enna bro? Ask topic or question..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Prepare message payload
     contents = []
     for m in st.session_state.messages[:-1]:
         role = "user" if m["role"] == "user" else "model"
         contents.append(types.Content(role=role, parts=[types.Part.from_text(text=m["content"])]))
 
-    # Current prompt parts (Text + Image if uploaded)
     current_parts = [types.Part.from_text(text=prompt)]
     if uploaded_image:
         image_bytes = uploaded_image.getvalue()
